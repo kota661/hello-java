@@ -1,0 +1,51 @@
+# Service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: java-app-svc
+  labels:
+    app: java-app-svc
+spec:
+  selector:
+    app: java-app
+  ports:
+   - protocol: TCP
+     port: 80
+
+# Service-Ingress
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: mycluster-ingress
+spec:
+  rules:
+  - host: <myingressname>
+    # bx cs cluster-get myclusterで確認
+    http:
+      paths:
+      - path: /java-app
+        backend:
+          serviceName: java-app-svc
+          servicePort: 80
+
+# Deployment
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: java-app
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: java-app
+        tier: backend
+    spec:
+      containers:
+      - name: java-app
+        image: <registry>/java-helloworld:latest
+        ports:
+        - containerPort: 80
