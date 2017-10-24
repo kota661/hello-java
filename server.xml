@@ -13,6 +13,6 @@
 
     <webApplication name="java-helloworld"
         location="JavaHelloWorldApp.war"
-        contextRoot="/" />
+        contextRoot="/java-app" />
   	<webContainer deferServletLoad="false"/>
 </server>
