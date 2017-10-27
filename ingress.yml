@@ -1,0 +1,16 @@
+# Service-Ingress
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: mycluster-ingress
+spec:
+  rules:
+  - host: <myingressname>
+    # bx cs cluster-get myclusterで確認
+    http:
+      paths:
+      - path: /java-app
+        backend:
+          serviceName: java-svc
+          servicePort: 80
