@@ -3,20 +3,21 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: java-app-svc
+  name: java-svc
 spec:
   selector:
     app: java-app
   ports:
    - protocol: TCP
      port: 80
+     targetPort: 80
 
 # Service-NodePort/LoadBalancer
 ---
 apiVersion: v1
 kind: Service
 metadata:
- name: java-app-svc-nodeport
+ name: java-np-svc
 spec:
  selector:
    app: java-app
@@ -26,6 +27,9 @@ spec:
   # the port that this service should serve on
   - protocol: TCP
     port: 80
+    targetPort: 80
+    # nodePort: 30000-32767
+    nodePort: 31903
 
 # Deployment
 ---
@@ -45,12 +49,12 @@ spec:
         image: kota661/java-helloworld:latest
         ports:
         - containerPort: 80
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 80
-          initialDelaySeconds: 20
-        # resources:
-        #   requests:
-        #     cpu: 100m
-        #     memory: 100Mi
+        #readinessProbe:
+        #  httpGet:
+        #    path: /health
+        #    port: 8080
+        #  initialDelaySeconds: 20
+        #resources:
+        #  requests:
+        #    cpu: 100m
+        #    memory: 100Mi
