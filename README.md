@@ -1,5 +1,7 @@
 # Java Hello World Sample
 
+[![Build Status](https://travis-ci.org/kota661/java-helloworld.svg?branch=master)](https://travis-ci.org/kota661/java-helloworld)
+
 This project contains a simple servlet application.
 
 [![Deploy to Bluemix](https://bluemix.net/deploy/button.png)](https://bluemix.net/deploy?repository=https://github.com/IBM-Bluemix/java-helloworld)
