@@ -12,7 +12,7 @@ install:
   - echo "java build"
   - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
   - echo "docker build"
-  - docker build -t kota661/java-helloworld:latest .
+  - docker build -t kota661/hello-java:latest .
 
 script:
   - echo "Build complete!"
@@ -21,5 +21,5 @@ after_success:
   - echo "Current branch is ${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}"
   - if [ "${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH}" == "master" ]; then
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-    docker push kota661/java-helloworld:latest;
+    docker push kota661/hello-java:latest;
     fi
