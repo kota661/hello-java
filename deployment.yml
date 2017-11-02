@@ -46,7 +46,7 @@ spec:
     spec:
       containers:
       - name: java-app
-        image: kota661/java-helloworld:latest
+        image: kota661/hello-java:latest
         ports:
         - containerPort: 80
         #readinessProbe:

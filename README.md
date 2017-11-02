@@ -1,14 +1,14 @@
 # Java Hello World Sample
 
-[![Build Status](https://travis-ci.org/kota661/java-helloworld.svg?branch=master)](https://travis-ci.org/kota661/java-helloworld)
+[![Build Status](https://travis-ci.org/kota661/hello-java.svg?branch=master)](https://travis-ci.org/kota661/hello-java)
 
 This project contains a simple servlet application.
 
-[![Deploy to Bluemix](https://bluemix.net/deploy/button.png)](https://bluemix.net/deploy?repository=https://github.com/IBM-Bluemix/java-helloworld)
+[![Deploy to Bluemix](https://bluemix.net/deploy/button.png)](https://bluemix.net/deploy?repository=https://github.com/kota661/hello-java)
 
 ## Running the application using the command-line
 
-This project can be built with [Apache Maven](http://maven.apache.org/). The project uses [Liberty Maven Plug-in][] to automatically download and install Liberty from the [Liberty repository](https://developer.ibm.com/wasdev/downloads/). Liberty Maven Plug-in is also used to create, configure, and run the application on the Liberty server. 
+This project can be built with [Apache Maven](http://maven.apache.org/). The project uses [Liberty Maven Plug-in][] to automatically download and install Liberty from the [Liberty repository](https://developer.ibm.com/wasdev/downloads/). Liberty Maven Plug-in is also used to create, configure, and run the application on the Liberty server.
 
 Use the following steps to run the application locally:
 

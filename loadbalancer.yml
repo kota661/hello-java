@@ -1,0 +1,17 @@
+# Service-LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: java-lb-svc
+spec:
+  selector:
+    app: java-app
+  type: LoadBalancer
+  ports:
+  # the port that this service should serve on
+  - protocol: TCP
+    port: 80
+    # port： ローカル(kubernetesの外)からPodへ接続用ポート
+    targetPort: 80
+    # targetPort: コンテナ（Pod）内の規定ポート
