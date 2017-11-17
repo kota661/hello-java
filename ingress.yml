@@ -4,9 +4,16 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: mycluster-ingress
+  annotations:
+    # ingress.bluemix.net/rewrite-path: "serviceName=<service_name1> rewrite=<target_path1>;serviceName=<service_name2> rewrite=<target_path2>"
+    ingress.bluemix.net/rewrite-path: serviceName=java-svc rewrite=/
 spec:
+  tls:
+  - hosts:
+    - <Ingress subdomain>
+    secretName: <Ingress secret:>
   rules:
-  - host: <myingressname>
+  - host: <Ingress subdomain>
     # bx cs cluster-get myclusterで確認
     http:
       paths:
