@@ -52,7 +52,7 @@ jobs:
       - save_cache:
           key: mvn-target-{{ .Branch }}-{{ .Revision }}
           paths:
-            - ~/repo/target/*.war
+            - ~/repo/target
 
 
   docker_build:
