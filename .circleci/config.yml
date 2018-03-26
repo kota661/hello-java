@@ -23,6 +23,12 @@ jobs:
     steps:
       - checkout
 
+      - run:
+          name: Version check
+          command: |
+          java --version
+          docker --version
+
       # Download and cache dependencies
       - restore_cache:
           keys:
@@ -40,6 +46,11 @@ jobs:
           name: Build java application
           command: |
             mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+      - save_cache:
+          key: {{ .Branch }}
+          paths:
+            - target
+
 
   docker_build:
     docker:
@@ -50,31 +61,42 @@ jobs:
       # setup docker build env
       - setup_remote_docker:
           docker_layer_caching: true
+
+      - checkout
+
+      - restore_cache:
+          key: {{ .Branch }}
+
       # docker build
       - run:
           name: Build application Docker image
           command: |
             docker build -t ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1} .
 
+
   test:
-    working_directory: ~/repo
     machine: true
+    working_directory: ~/repo
     steps:
+      - checkout
+
+      # docker run
       - run:
           name: Test run
           command: |
             docker run -d -p 80:80 --name hello-java ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1}
 
+
   deploy:
-    working_directory: ~/repo
     machine: true
+    working_directory: ~/repo
     steps:
-      # TODO --password-stdin
+      # docker push
       - deploy:
           name: Push application Docker image
           command: |
-            docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}";
-            docker push ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1};
+            docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}"
+            docker push ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1}
 
 workflows:
   version: 2
