@@ -50,7 +50,7 @@ jobs:
 
       # save ./target/
       - save_cache:
-          key: mvn-target-{{ .Branch }}-{{ .BuildNum }}
+          key: mvn-target-{{ .Branch }}-{{ .Revision }}	
           paths:
             - ~/repo/target
 
@@ -70,7 +70,7 @@ jobs:
           docker_layer_caching: true
 
       - restore_cache:
-          key: mvn-target-{{ .Branch }}-{{ .BuildNum }}
+          key: mvn-target-{{ .Branch }}-{{ .Revision }}
 
       - run:
           name: ls
