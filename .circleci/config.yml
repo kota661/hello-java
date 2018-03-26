@@ -110,6 +110,7 @@ jobs:
           name: Test run
           command: |
             docker run -d -p 80:80 --name hello-java ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1}
+            curl http://localhost:80/
 
 
   deploy:
