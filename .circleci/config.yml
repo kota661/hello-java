@@ -50,9 +50,9 @@ jobs:
 
       # save ./target/
       - save_cache:
-          key: {{ .Branch }}
+          key: mvn-result
           paths:
-            - target
+            - ~/target
 
 
   docker_build:
@@ -70,7 +70,7 @@ jobs:
           docker_layer_caching: true
 
       - restore_cache:
-          key: {{ .Branch }}
+          key: mvn-result
 
       # docker build
       - run:
