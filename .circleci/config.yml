@@ -26,8 +26,8 @@ jobs:
       - run:
           name: Version check
           command: |
-          java --version
-          docker --version
+            java --version
+            docker --version
 
       # Download and cache dependencies
       - restore_cache:
