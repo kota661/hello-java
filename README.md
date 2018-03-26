@@ -1,6 +1,7 @@
 # Java Hello World Sample
 
-[![Build Status](https://travis-ci.org/kota661/hello-java.svg?branch=master)](https://travis-ci.org/kota661/hello-java)
+TravisCI:[![Build Status](https://travis-ci.org/kota661/hello-java.svg?branch=master)](https://travis-ci.org/kota661/hello-java)
+CircleCI: [![CircleCI](https://circleci.com/gh/kota661/hello-java/tree/master.svg?style=svg)](https://circleci.com/gh/kota661/hello-java/tree/master)
 
 This project contains a simple servlet application.
 
