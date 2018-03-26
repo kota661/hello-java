@@ -4,15 +4,10 @@
 #
 version: 2
 jobs:
-  build:
+  java_build:
     docker:
       # specify the version you desire here
       - image: circleci/openjdk:8-jdk
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
 
     working_directory: ~/repo
 
@@ -23,9 +18,12 @@ jobs:
     steps:
       - checkout
 
-      # setup docker build env
-      - setup_remote_docker:
-          docker_layer_caching: true
+      # Check version
+      - run:
+          name: Check Version
+          command: |
+            docker --version
+            mvn --version
 
       # Download and cache dependencies
       - restore_cache:
@@ -39,23 +37,110 @@ jobs:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}
 
-      # maven build
+      # Maven build
       - run:
           name: Build java application
           command: |
             mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 
-      # docker build
+      # Save ./target/
+      - save_cache:
+          key: mvn-target-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - ~/repo/target
+
+
+  docker_build:
+    docker:
+      # specify the version you desire here
+      - image: circleci/openjdk:8-jdk
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      # Setup docker build env
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      - restore_cache:
+          key: mvn-target-{{ .Branch }}-{{ .Revision }}
+
+      # Docker build
       - run:
           name: Build application Docker image
           command: |
             docker build -t ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1} .
 
+      # Docker save
+      - run:
+          name: Docker save
+          command: |
+            mkdir -p ~/caches
+            docker save ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1} -o ~/caches/hello-java.tar
+      - save_cache:
+          key: docker-image-{{ .Branch }}-{{ .Revision }}
+          paths: ~/caches/hello-java.tar
+
+
+  test:
+    machine: true
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      # Docker load
+      - restore_cache:
+          key: docker-image-{{ .Branch }}-{{ .Revision }}
+          paths: ~/caches/hello-java.tar
+      - run:
+          name: Load Docker images
+          command: docker load -i ~/caches/hello-java.tar
+
+      # Test script
+      - run:
+          name: Test run
+          command: |
+            echo OK!
+
+
+  deploy:
+    machine: true
+    working_directory: ~/repo
+    steps:
+      # docker load
+      - restore_cache:
+          key: docker-image-{{ .Branch }}-{{ .Revision }}
+          paths: ~/caches/hello-java.tar
+      - run:
+          name: Load Docker images
+          command: docker load -i ~/caches/hello-java.tar
+
       # docker push
       - deploy:
           name: Push application Docker image
           command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}";
-              docker push ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1};
-            fi
+            docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}"
+            docker push ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1}
+
+
+workflows:
+  version: 2
+  build-test-and-deploy:
+    jobs:
+      - java_build
+      - docker_build:
+          requires:
+            - java_build
+      - test:
+          requires:
+            - docker_build
+      - deploy:
+          requires:
+            - test
+          filters:
+              branches:
+                only: master
