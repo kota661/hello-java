@@ -50,9 +50,9 @@ jobs:
 
       # save ./target/
       - save_cache:
-          key: mvn-target-{{ .Branch }}-{{ .Revision }}	
+          key: mvn-target-{{ .Branch }}-{{ .Revision }}
           paths:
-            - ~/repo/target
+            - ~/repo/target/*.war
 
 
   docker_build:
@@ -72,17 +72,20 @@ jobs:
       - restore_cache:
           key: mvn-target-{{ .Branch }}-{{ .Revision }}
 
-      - run:
-          name: ls
-          command: |
-            ls -l
-            ls -l target
-
       # docker build
       - run:
           name: Build application Docker image
           command: |
             docker build -t ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1} .
+
+      # docker save
+      - run:
+          name: Docker save
+          command: |
+            docker save ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1} -o ~/caches/hello-java.tar
+      - save_cache:
+          key: docker-image-{{ .Branch }}-{{ .Revision }}
+          paths: ~/caches/hello-java.tar
 
 
   test:
@@ -92,6 +95,14 @@ jobs:
 
     steps:
       - checkout
+
+      # docker load
+      - restore_cache:
+          key: docker-image-{{ .Branch }}-{{ .Revision }}
+          paths: ~/caches/hello-java.tar
+      - run:
+          name: Load Docker images
+          command: docker load -i ~/caches/hello-java.tar
 
       # docker run
       - run:
@@ -104,6 +115,14 @@ jobs:
     machine: true
     working_directory: ~/repo
     steps:
+      # docker load
+      - restore_cache:
+          key: docker-image-{{ .Branch }}-{{ .Revision }}
+          paths: ~/caches/hello-java.tar
+      - run:
+          name: Load Docker images
+          command: docker load -i ~/caches/hello-java.tar
+
       # docker push
       - deploy:
           name: Push application Docker image
