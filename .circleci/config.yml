@@ -42,7 +42,7 @@ jobs:
       - run:
           name: maven build
           command: |
-            kipTests=true -Dmaven.javadoc.skip=true -B -V
+            mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 
       # Docker イメージのビルドとキャッシュ < リモート Docker Engine におけるレイヤーキャッシングが行われないから
       # http://lambdar.hatenablog.com/entry/2017/04/18/084900
