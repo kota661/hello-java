@@ -25,6 +25,7 @@ jobs:
 
       # setup docker build env
       - setup_remote_docker
+          docker_layer_caching: true
 
       # Download and cache dependencies
       - restore_cache:
@@ -38,37 +39,17 @@ jobs:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}
 
-      # run maven build
+      # maven build
       - run:
-          name: maven build
+          name: Build java application
           command: |
             mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 
-      # Docker イメージのビルドとキャッシュ < リモート Docker Engine におけるレイヤーキャッシングが行われないから
-      # http://lambdar.hatenablog.com/entry/2017/04/18/084900
-      - restore_cache:
-          keys:
-            - v1-{{ .Branch }}
-          paths:
-            - /caches/hello-java.tar
-      - run:
-          name: Load Docker image layer cache
-          command: |
-            set +o pipefail
-            docker load -i /caches/hello-java.tar | true
+      # docker build
       - run:
           name: Build application Docker image
           command: |
-            docker build --cache-from=hello-java -t hello-java .
-      - run:
-          name: Save Docker image layer cache
-          command: |
-            mkdir -p /caches
-            docker save -o /caches/hello-java.tar hello-java
-      - save_cache:
-          key: v1-{{ .Branch }}-{{ epoch }}
-          paths:
-            - /caches/hello-java.tar
+            docker build -t ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1} .
 
       # docker push
       - deploy:
@@ -76,6 +57,5 @@ jobs:
           command: |
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
               docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}";
-              docker tag hello-java "${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1};"
               docker push ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1};
             fi
