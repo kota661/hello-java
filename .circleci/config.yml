@@ -51,11 +51,35 @@ jobs:
           command: |
             docker build -t ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1} .
 
-      # docker push
+  test:
+    machine: true
+    steps:
+      - run:
+          name: Test run
+          command: |
+            docker run -d -p 80:80 --name hello-java ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1}
+
+  deploy:
+    machine: true
+    steps:
+      # TODO --password-stdin
       - deploy:
           name: Push application Docker image
           command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}";
-              docker push ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1};
-            fi
+            docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}";
+            docker push ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1};
+
+workflows:
+  version: 2
+  build-test-and-deploy:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
+      - deploy:
+          requires:
+            - test
+          filters:
+              branches:
+                only: master
