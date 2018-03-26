@@ -52,7 +52,7 @@ jobs:
       - save_cache:
           key: mvn-result
           paths:
-            - target
+            - ~/repo/target
 
 
   docker_build:
@@ -71,6 +71,12 @@ jobs:
 
       - restore_cache:
           key: mvn-result
+
+      - run:
+          name: ls
+          command: |
+            ls -l
+            ls -l target
 
       # docker build
       - run:
