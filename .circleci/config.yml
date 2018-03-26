@@ -4,7 +4,7 @@
 #
 version: 2
 jobs:
-  java_build:
+  build:
     docker:
       # specify the version you desire here
       - image: circleci/openjdk:8-jdk
@@ -50,7 +50,7 @@ jobs:
 
       # save ./target/
       - save_cache:
-          key: mvn-result
+          key: mvn-target-{{ .Branch }}-{{ .BuildNum }}
           paths:
             - ~/repo/target
 
@@ -70,7 +70,7 @@ jobs:
           docker_layer_caching: true
 
       - restore_cache:
-          key: mvn-result
+          key: mvn-target-{{ .Branch }}-{{ .BuildNum }}
 
       - run:
           name: ls
