@@ -52,6 +52,7 @@ jobs:
             docker build -t ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1} .
 
   test:
+    working_directory: ~/repo
     machine: true
     steps:
       - run:
@@ -60,6 +61,7 @@ jobs:
             docker run -d -p 80:80 --name hello-java ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1}
 
   deploy:
+    working_directory: ~/repo
     machine: true
     steps:
       # TODO --password-stdin
