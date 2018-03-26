@@ -82,6 +82,7 @@ jobs:
       - run:
           name: Docker save
           command: |
+            mkdir -p ~/caches
             docker save ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1} -o ~/caches/hello-java.tar
       - save_cache:
           key: docker-image-{{ .Branch }}-{{ .Revision }}
