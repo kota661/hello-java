@@ -23,11 +23,12 @@ jobs:
     steps:
       - checkout
 
+      # check version
       - run:
-          name: Version check
+          name: Check Version
           command: |
-            java --version
             docker --version
+            mvn --version
 
       # Download and cache dependencies
       - restore_cache:
@@ -46,6 +47,8 @@ jobs:
           name: Build java application
           command: |
             mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+
+      # save ./target/
       - save_cache:
           key: {{ .Branch }}
           paths:
@@ -56,13 +59,15 @@ jobs:
     docker:
       # specify the version you desire here
       - image: circleci/openjdk:8-jdk
+
     working_directory: ~/repo
+
     steps:
+      - checkout
+
       # setup docker build env
       - setup_remote_docker:
           docker_layer_caching: true
-
-      - checkout
 
       - restore_cache:
           key: {{ .Branch }}
@@ -76,7 +81,9 @@ jobs:
 
   test:
     machine: true
+
     working_directory: ~/repo
+
     steps:
       - checkout
 
