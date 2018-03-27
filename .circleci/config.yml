@@ -2,6 +2,12 @@
 #
 # Check https://circleci.com/docs/2.0/language-java/ for more details
 #
+# Reference Page
+# * Configuration Reference - CircleCI
+#   - https://circleci.com/docs/2.0/configuration-reference/
+# * Using CircleCI Environment Variables - CircleCI
+#   - https://circleci.com/docs/1.0/environment-variables/
+
 version: 2
 jobs:
   java_build:
@@ -20,10 +26,13 @@ jobs:
 
       # Check version
       - run:
-          name: Check Version
+          name: Check env
           command: |
             docker --version
             mvn --version
+            echo CIRCLE_BRANCH: ${CIRCLE_BRANCH}
+            echo CIRCLE_TAG: ${CIRCLE_TAG}
+            echo CIRCLE_SHA1: ${CIRCLE_SHA1}
 
       # Download and cache dependencies
       - restore_cache:
@@ -71,14 +80,14 @@ jobs:
       - run:
           name: Build application Docker image
           command: |
-            docker build -t ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1} .
+            docker build -t ${REGISTRY_ENDPOINT}/hello-java .
 
       # Docker save
       - run:
           name: Docker save
           command: |
             mkdir -p ~/caches
-            docker save ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1} -o ~/caches/hello-java.tar
+            docker save ${REGISTRY_ENDPOINT}/hello-java -o ~/caches/hello-java.tar
       - save_cache:
           key: docker-image-{{ .Branch }}-{{ .Revision }}
           paths: ~/caches/hello-java.tar
@@ -90,16 +99,6 @@ jobs:
     working_directory: ~/repo
 
     steps:
-      - checkout
-
-      # Docker load
-      - restore_cache:
-          key: docker-image-{{ .Branch }}-{{ .Revision }}
-          paths: ~/caches/hello-java.tar
-      - run:
-          name: Load Docker images
-          command: docker load -i ~/caches/hello-java.tar
-
       # Test script
       - run:
           name: Test run
@@ -109,7 +108,9 @@ jobs:
 
   deploy:
     machine: true
+
     working_directory: ~/repo
+
     steps:
       # docker load
       - restore_cache:
@@ -124,23 +125,64 @@ jobs:
           name: Push application Docker image
           command: |
             docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}"
-            docker push ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_SHA1}
+            docker tag ${REGISTRY_ENDPOINT}/hello-java ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_BRANCH}
+            docker push ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_BRANCH}
+
+
+  release:
+    machine: true
+
+    working_directory: ~/repo
+
+    steps:
+      # docker load
+      - restore_cache:
+          key: docker-image-{{ .Branch }}-{{ .Revision }}
+          paths: ~/caches/hello-java.tar
+      - run:
+          name: Load Docker images
+          command: docker load -i ~/caches/hello-java.tar
+
+      # docker push
+      - deploy:
+          name: Push application Docker image
+          command: |
+            docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}"
+            docker tag ${REGISTRY_ENDPOINT}/hello-java ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_TAG}
+            docker push ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_TAG}
 
 
 workflows:
   version: 2
   build-test-and-deploy:
     jobs:
-      - java_build
+      - java_build:
+          filters:
+            tags:
+              only: /^v.*/
       - docker_build:
           requires:
             - java_build
+          filters:
+            tags:
+              only: /^v.*/
       - test:
           requires:
             - docker_build
+          filters:
+            tags:
+              only: /^v.*/
       - deploy:
           requires:
             - test
           filters:
-              branches:
-                only: master
+            branches:
+              only: master
+      - release:
+          requires:
+            - test
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
