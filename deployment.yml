@@ -36,13 +36,14 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: java-app
+  name: java-app-v1
 spec:
   replicas: 2
   template:
     metadata:
       labels:
         app: java-app
+        version: v1
     spec:
       containers:
       - name: java-app
