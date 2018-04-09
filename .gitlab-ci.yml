@@ -1,0 +1,38 @@
+image: docker:latest
+services:
+  - docker:dind
+
+variables:
+  DOCKER_DRIVER: overlay
+  SPRING_PROFILES_ACTIVE: gitlab-ci
+
+stages:
+  - build
+  - package
+  - deploy
+
+maven-build:
+  image: maven:3-jdk-8
+  stage: build
+  script: "mvn package -B"
+  artifacts:
+    paths:
+      - target/*.war
+
+docker-build:
+  stage: package
+  script:
+    - docker build -t registry.gitlab.com/kota661/hello-java:$CI_COMMIT_REF_NAME .
+    - docker save registry.gitlab.com/kota661/hello-java:$CI_COMMIT_REF_NAME > hello-java-image.tar
+  artifacts:
+    paths:
+      - hello-java-image.tar
+
+deploy:
+  stage: deploy
+  script:
+    - docker load -i hello-java-image.tar
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN registry.gitlab.com
+    - docker push registry.gitlab.com/kota661/hello-java:$CI_COMMIT_REF_NAME
+  only:
+    - master
