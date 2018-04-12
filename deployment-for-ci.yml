@@ -7,6 +7,7 @@ metadata:
 spec:
  selector:
    app: java-app
+   environment: {Environment}
  # type: LoadBalancer
  type: NodePort
  ports:
@@ -29,6 +30,7 @@ spec:
       labels:
         app: java-app
         version: {Version}
+        environment: {Environment}
     spec:
       containers:
       - name: java-app
