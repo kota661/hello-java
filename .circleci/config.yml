@@ -132,7 +132,7 @@ jobs:
     environment:
       # Customize the JVM maximum heap limit
       K8S_CLUSTER: mycluster
-      APP_ENV: test
+      APP_ENV: dev
 
     steps:
       - checkout
@@ -140,12 +140,19 @@ jobs:
       - deploy:
           name: Deploy to kubernets cluster
           command: |
+            # cluster-configがstepを分けると引き継がれないので、1stepで全部書く。
+            # ログイン
             bx login -a https://api.ng.bluemix.net -c ${IBM_CLOUD_ACCOUNT} -o ${IBM_CLOUD_ORG} -s dev --apikey ${IBM_CLOUD_API_KEY}
             $(bx cs cluster-config ${K8S_CLUSTER} | grep export) && echo $KUBECONFIG
             kubectl cluster-info
+            # yamlの設定
             sed -i -e "s/{Environment}/${APP_ENV}/g" deployment-for-ci.yml
             sed -i -e "s/{Version}/${CIRCLE_BRANCH}/g" deployment-for-ci.yml
-            kubectl apply -f deployment-for-ci.yml
+            # namespaceの作成
+            kubectl get namespaces hello-java-${APP_ENV} || kubectl create namespace hello-java-${APP_ENV}
+            # deploy
+            cat deployment-for-ci.yml
+            kubectl apply -f deployment-for-ci.yml -n hello-java-${APP_ENV}
 
 
   deploy:
@@ -157,7 +164,7 @@ jobs:
     environment:
       # Customize the JVM maximum heap limit
       K8S_CLUSTER: mycluster
-      APP_ENV: staging
+      APP_ENV: qa
 
     steps:
       - checkout
@@ -165,12 +172,21 @@ jobs:
       - deploy:
           name: Deploy to kubernets cluster
           command: |
+            # cluster-configがstepを分けると引き継がれないので、1stepで全部書く。
+            # ログイン
             bx login -a https://api.ng.bluemix.net -c ${IBM_CLOUD_ACCOUNT} -o ${IBM_CLOUD_ORG} -s dev --apikey ${IBM_CLOUD_API_KEY}
             $(bx cs cluster-config ${K8S_CLUSTER} | grep export) && echo $KUBECONFIG
             kubectl cluster-info
+            # devの環境削除
+            kubectl delete ns/hello-java-dev || echo There is no development environment..
+            # yamlの設定
             sed -i -e "s/{Environment}/${APP_ENV}/g" deployment-for-ci.yml
             sed -i -e "s/{Version}/${CIRCLE_BRANCH}/g" deployment-for-ci.yml
-            kubectl apply -f deployment-for-ci.yml
+            # namespaceの作成
+            kubectl get namespaces hello-java-${APP_ENV} || kubectl create namespace hello-java-${APP_ENV}
+            # deploy
+            cat deployment-for-ci.yml
+            kubectl apply -f deployment-for-ci.yml -n hello-java-${APP_ENV}
 
 
   before-release:
@@ -211,12 +227,20 @@ jobs:
       - deploy:
           name: Deploy to kubernets cluster
           command: |
+            # cluster-configがstepを分けると引き継がれないので、1stepで全部書く。
+            # ログイン
             bx login -a https://api.ng.bluemix.net -c ${IBM_CLOUD_ACCOUNT} -o ${IBM_CLOUD_ORG} -s dev --apikey ${IBM_CLOUD_API_KEY}
             $(bx cs cluster-config ${K8S_CLUSTER} | grep export) && echo $KUBECONFIG
             kubectl cluster-info
+            # yamlの設定
             sed -i -e "s/{Environment}/${APP_ENV}/g" deployment-for-ci.yml
             sed -i -e "s/{Version}/${CIRCLE_TAG}/g" deployment-for-ci.yml
-            kubectl apply -f deployment-for-ci.yml
+            # namespaceの作成
+            kubectl get namespaces hello-java-${APP_ENV} || kubectl create namespace hello-java-${APP_ENV}
+            # deploy
+            cat deployment-for-ci.yml
+            kubectl apply -f deployment-for-ci.yml -n hello-java-${APP_ENV}
+
 
 workflows:
   version: 2
