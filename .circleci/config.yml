@@ -7,10 +7,17 @@
 #   - https://circleci.com/docs/2.0/configuration-reference/
 # * Using CircleCI Environment Variables - CircleCI
 #   - https://circleci.com/docs/1.0/environment-variables/
+# Enviroment variables
+#  REGISTRY_ENDPOINT
+#  DOCKER_USERNAME
+#  DOCKER_PASSWORD
+#  IBM_CLOUD_API_KEY
+#  IBM_CLOUD_ACCOUNT
+#  IBM_CLOUD_ORG
 
 version: 2
 jobs:
-  java_build:
+  build-java:
     docker:
       # specify the version you desire here
       - image: circleci/openjdk:8-jdk
@@ -59,7 +66,7 @@ jobs:
             - ~/repo/target
 
 
-  docker_build:
+  build-docker:
     docker:
       # specify the version you desire here
       - image: circleci/openjdk:8-jdk
@@ -93,20 +100,7 @@ jobs:
           paths: ~/caches/hello-java.tar
 
 
-  test:
-    machine: true
-
-    working_directory: ~/repo
-
-    steps:
-      # Test script
-      - run:
-          name: Test run
-          command: |
-            echo OK!
-
-
-  deploy:
+  before-test:
     machine: true
 
     working_directory: ~/repo
@@ -129,49 +123,118 @@ jobs:
             docker push ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_BRANCH}
 
 
-  release:
+  test:
+    docker:
+      # specify the version you desire here
+      - image: kota661/ibmcloud-sdk:latest
+
+    working_directory: ~/repo
+    environment:
+      # Customize the JVM maximum heap limit
+      K8S_CLUSTER: mycluster
+      APP_ENV: test
+
+    steps:
+      - checkout
+      # bxにログインしてk8s configをセット
+      - deploy:
+          name: Deploy to kubernets cluster
+          command: |
+            bx login -a https://api.ng.bluemix.net -c ${IBM_CLOUD_ACCOUNT} -o ${IBM_CLOUD_ORG} -s dev --apikey ${IBM_CLOUD_API_KEY}
+            $(bx cs cluster-config ${K8S_CLUSTER} | grep export) && echo $KUBECONFIG
+            kubectl cluster-info
+            sed -i -e "s/{Environment}/${APP_ENV}/g" deployment-for-ci.yml
+            sed -i -e "s/{Version}/${CIRCLE_BRANCH}/g" deployment-for-ci.yml
+            kubectl apply -f deployment-for-ci.yml
+
+
+  deploy:
+    docker:
+      # specify the version you desire here
+      - image: kota661/ibmcloud-sdk:latest
+
+    working_directory: ~/repo
+    environment:
+      # Customize the JVM maximum heap limit
+      K8S_CLUSTER: mycluster
+      APP_ENV: staging
+
+    steps:
+      - checkout
+      # bxにログインしてk8s configをセット
+      - deploy:
+          name: Deploy to kubernets cluster
+          command: |
+            bx login -a https://api.ng.bluemix.net -c ${IBM_CLOUD_ACCOUNT} -o ${IBM_CLOUD_ORG} -s dev --apikey ${IBM_CLOUD_API_KEY}
+            $(bx cs cluster-config ${K8S_CLUSTER} | grep export) && echo $KUBECONFIG
+            kubectl cluster-info
+            sed -i -e "s/{Environment}/${APP_ENV}/g" deployment-for-ci.yml
+            sed -i -e "s/{Version}/${CIRCLE_BRANCH}/g" deployment-for-ci.yml
+            kubectl apply -f deployment-for-ci.yml
+
+
+  before-release:
     machine: true
 
     working_directory: ~/repo
 
     steps:
-      # docker load
-      - restore_cache:
-          key: docker-image-{{ .Branch }}-{{ .Revision }}
-          paths: ~/caches/hello-java.tar
+      # 本来であればmasterのDocker imageを使っていいかの確認のため、masterのリビジョンとtagのリビジョンをチェック
       - run:
-          name: Load Docker images
-          command: docker load -i ~/caches/hello-java.tar
+          name: Pull Docker images
+          command: |
+            docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}"
+            docker pull ${REGISTRY_ENDPOINT}/hello-java:master
 
       # docker push
       - deploy:
           name: Push application Docker image
           command: |
-            docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}"
-            docker tag ${REGISTRY_ENDPOINT}/hello-java ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_TAG}
+            docker tag ${REGISTRY_ENDPOINT}/hello-java:master ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_TAG}
             docker push ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_TAG}
 
+
+  release:
+    docker:
+      # specify the version you desire here
+      - image: kota661/ibmcloud-sdk:latest
+
+    working_directory: ~/repo
+    environment:
+      # Customize the JVM maximum heap limit
+      K8S_CLUSTER: mycluster
+      APP_ENV: production
+
+    steps:
+      - checkout
+      # bxにログインしてk8s configをセット
+      - deploy:
+          name: Deploy to kubernets cluster
+          command: |
+            bx login -a https://api.ng.bluemix.net -c ${IBM_CLOUD_ACCOUNT} -o ${IBM_CLOUD_ORG} -s dev --apikey ${IBM_CLOUD_API_KEY}
+            $(bx cs cluster-config ${K8S_CLUSTER} | grep export) && echo $KUBECONFIG
+            kubectl cluster-info
+            sed -i -e "s/{Environment}/${APP_ENV}/g" deployment-for-ci.yml
+            sed -i -e "s/{Version}/${CIRCLE_TAG}/g" deployment-for-ci.yml
+            kubectl apply -f deployment-for-ci.yml
 
 workflows:
   version: 2
   build-test-and-deploy:
     jobs:
-      - java_build:
-          filters:
-            tags:
-              only: /^v.*/
-      - docker_build:
+      - build-java
+      - build-docker:
           requires:
-            - java_build
-          filters:
-            tags:
-              only: /^v.*/
+            - build-java
+      # テスト準備（Docker ImageをPushl）
+      - before-test:
+          requires:
+            - build-docker
+      # テスト環境にDeployしてテストの実行
       - test:
           requires:
-            - docker_build
-          filters:
-            tags:
-              only: /^v.*/
+            - before-test
+      # masterにマージされたらステージング環境にデプロイ
       - deploy:
           requires:
             - test
@@ -179,11 +242,17 @@ workflows:
             branches:
               only:
                 - master
-                - develop
-                - beta
+      # release準備（Docker ImageをPush）
+      - before-release:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
+      # タグが切られたらリリース
       - release:
           requires:
-            - test
+            - before-release
           filters:
             branches:
               ignore: /.*/
