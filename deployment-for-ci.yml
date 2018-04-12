@@ -3,11 +3,10 @@
 apiVersion: v1
 kind: Service
 metadata:
- name: java-svc-{Environment}
+ name: java-svc-{Environment}-{Version}
 spec:
  selector:
    app: java-app
-   environment: {Environment}
  # type: LoadBalancer
  type: NodePort
  ports:
@@ -22,7 +21,7 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: java-app-{Version}
+  name: java-app-{Environment}-{Version}
 spec:
   replicas: 1
   template:
@@ -30,7 +29,6 @@ spec:
       labels:
         app: java-app
         version: {Version}
-        environment: {Environment}
     spec:
       containers:
       - name: java-app
