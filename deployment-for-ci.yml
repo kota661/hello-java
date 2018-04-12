@@ -1,0 +1,48 @@
+# Service
+---
+apiVersion: v1
+kind: Service
+metadata:
+ name: java-svc-{Environment}
+spec:
+ selector:
+   app: java-app
+   environment: {Environment}
+ # type: LoadBalancer
+ type: NodePort
+ ports:
+  # the port that this service should serve on
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+    # nodePort: 30000-32767
+
+# Deployment
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: java-app-{Version}
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: java-app
+        version: {Version}
+        environment: {Environment}
+    spec:
+      containers:
+      - name: java-app
+        image: kota661/hello-java:{Version}
+        ports:
+        - containerPort: 80
+        #readinessProbe:
+        #  httpGet:
+        #    path: /health
+        #    port: 8080
+        #  initialDelaySeconds: 20
+        #resources:
+        #  requests:
+        #    cpu: 100m
+        #    memory: 100Mi
