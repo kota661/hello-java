@@ -8,7 +8,6 @@
 # * Using CircleCI Environment Variables - CircleCI
 #   - https://circleci.com/docs/1.0/environment-variables/
 # Enviroment variables
-#  REGISTRY_ENDPOINT
 #  DOCKER_USERNAME
 #  DOCKER_PASSWORD
 #  IBM_CLOUD_API_KEY
@@ -87,16 +86,16 @@ jobs:
       - run:
           name: Build application Docker image
           command: |
-            docker build -t ${REGISTRY_ENDPOINT}/hello-java .
+            docker build -t kota661/hello-java-dev:${CIRCLE_SHA1} -f Dockerfile-for-ci .
 
       # Docker save
       - run:
           name: Docker save
           command: |
             mkdir -p ~/caches
-            docker save ${REGISTRY_ENDPOINT}/hello-java -o ~/caches/hello-java.tar
+            docker save kota661/hello-java-dev:${CIRCLE_SHA1} -o ~/caches/hello-java.tar
       - save_cache:
-          key: docker-image-{{ .Branch }}-{{ .Revision }}
+          key: docker-image-{{ .Revision }}
           paths: ~/caches/hello-java.tar
 
 
@@ -108,7 +107,7 @@ jobs:
     steps:
       # docker load
       - restore_cache:
-          key: docker-image-{{ .Branch }}-{{ .Revision }}
+          key: docker-image-{{ .Revision }}
           paths: ~/caches/hello-java.tar
       - run:
           name: Load Docker images
@@ -119,8 +118,7 @@ jobs:
           name: Push application Docker image
           command: |
             docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}"
-            docker tag ${REGISTRY_ENDPOINT}/hello-java ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_BRANCH}
-            docker push ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_BRANCH}
+            docker push kota661/hello-java-dev:${CIRCLE_SHA1}
 
 
   test:
@@ -141,8 +139,8 @@ jobs:
             K8S_CLUSTER=mycluster
             APP_ENV=dev
             APP_VERSION=${CIRCLE_BRANCH}
-            FULL_NAME=hello-java-${APP_ENV}-${CIRCLE_BRANCH}
-            IMAGE_PULL_POCICY=Always
+            FULL_NAME=hello-java-${CIRCLE_BRANCH//./-}
+            DOCKER_IMAGE=kota661/hello-java-dev:${CIRCLE_SHA1}
             REPLICAS=1
 
             # ログイン
@@ -157,10 +155,9 @@ jobs:
 
             # yamlの設定
             sed -i -e "s/{FullName}/${FULL_NAME}/g" deployment-for-ci.yml
-            sed -i -e "s/{Environment}/${APP_ENV}/g" deployment-for-ci.yml
             sed -i -e "s/{Version}/${APP_VERSION}/g" deployment-for-ci.yml
-            sed -i -e "s/{ImagePullPolicy}/${IMAGE_PULL_POCICY}/g" deployment-for-ci.yml
             sed -i -e "s/{Replicas}/${REPLICAS}/g" deployment-for-ci.yml
+            sed -i -e "s#{DockerImage}#${DOCKER_IMAGE}#g" deployment-for-ci.yml
 
             # namespaceの作成
             kubectl get namespaces hello-java-${APP_ENV} || kubectl create namespace hello-java-${APP_ENV}
@@ -182,12 +179,13 @@ jobs:
       - deploy:
           name: Deploy to kubernets cluster
           command: |
+            # cluster-configがstepを分けると引き継がれないので、1stepで全部書く。
             # env
             K8S_CLUSTER=mycluster
             APP_ENV=qa
             APP_VERSION=${CIRCLE_BRANCH}
-            FULL_NAME=hello-java-${APP_ENV}-${CIRCLE_BRANCH}
-            IMAGE_PULL_POCICY=Always
+            FULL_NAME=hello-java-${CIRCLE_BRANCH//./-}
+            DOCKER_IMAGE=kota661/hello-java-dev:${CIRCLE_SHA1}
             REPLICAS=1
 
             # ログイン
@@ -202,10 +200,9 @@ jobs:
 
             # yamlの設定
             sed -i -e "s/{FullName}/${FULL_NAME}/g" deployment-for-ci.yml
-            sed -i -e "s/{Environment}/${APP_ENV}/g" deployment-for-ci.yml
             sed -i -e "s/{Version}/${APP_VERSION}/g" deployment-for-ci.yml
-            sed -i -e "s/{ImagePullPolicy}/${IMAGE_PULL_POCICY}/g" deployment-for-ci.yml
             sed -i -e "s/{Replicas}/${REPLICAS}/g" deployment-for-ci.yml
+            sed -i -e "s#{DockerImage}#${DOCKER_IMAGE}#g" deployment-for-ci.yml
 
             # namespaceの作成
             kubectl get namespaces hello-java-${APP_ENV} || kubectl create namespace hello-java-${APP_ENV}
@@ -225,14 +222,14 @@ jobs:
           name: Pull Docker images
           command: |
             docker login -u="${DOCKER_USERNAME}" -p="${DOCKER_PASSWORD}"
-            docker pull ${REGISTRY_ENDPOINT}/hello-java:master
+            docker pull kota661/hello-java-dev:${CIRCLE_SHA1}
 
       # docker push
       - deploy:
           name: Push application Docker image
           command: |
-            docker tag ${REGISTRY_ENDPOINT}/hello-java:master ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_TAG}
-            docker push ${REGISTRY_ENDPOINT}/hello-java:${CIRCLE_TAG}
+            docker tag kota661/hello-java-dev:${CIRCLE_SHA1} kota661/hello-java:${CIRCLE_TAG}
+            docker push kota661/hello-java:${CIRCLE_TAG}
 
 
   release:
@@ -253,8 +250,8 @@ jobs:
             K8S_CLUSTER=mycluster
             APP_ENV=prod
             APP_VERSION=${CIRCLE_TAG}
-            FULL_NAME=hello-java-${APP_ENV}-${CIRCLE_BRANCH//./-}
-            IMAGE_PULL_POCICY=IfNotPresent
+            FULL_NAME=hello-java-${CIRCLE_TAG//./-}
+            DOCKER_IMAGE=kota661/hello-java:${CIRCLE_TAG}
             REPLICAS=3
 
             # ログイン
@@ -269,10 +266,9 @@ jobs:
 
             # yamlの設定
             sed -i -e "s/{FullName}/${FULL_NAME}/g" deployment-for-ci.yml
-            sed -i -e "s/{Environment}/${APP_ENV}/g" deployment-for-ci.yml
             sed -i -e "s/{Version}/${APP_VERSION}/g" deployment-for-ci.yml
-            sed -i -e "s/{ImagePullPolicy}/${IMAGE_PULL_POCICY}/g" deployment-for-ci.yml
             sed -i -e "s/{Replicas}/${REPLICAS}/g" deployment-for-ci.yml
+            sed -i -e "s#{DockerImage}#${DOCKER_IMAGE}#g" deployment-for-ci.yml
 
             # namespaceの作成
             kubectl get namespaces hello-java-${APP_ENV} || kubectl create namespace hello-java-${APP_ENV}
@@ -311,7 +307,7 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^v.*/
+              only: /.*/
       # タグが切られたらリリース
       - release:
           requires:
@@ -320,4 +316,4 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^v.*/
+              only: /.*/
