@@ -7,4 +7,4 @@ RUN mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 FROM websphere-liberty:microProfile
 RUN installUtility install  --acceptLicense defaultServer
 COPY server.xml /config/server.xml
-COPY --from=BUILD /usr/src/app/target/*.war /config/apps/
+COPY --from=BUILD /usr/src/app/target/JavaHelloWorldApp.war /config/apps/
