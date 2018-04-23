@@ -139,8 +139,8 @@ jobs:
             K8S_CLUSTER=mycluster
             APP_ENV=dev
             APP_VERSION=${CIRCLE_BRANCH}
-            FULL_NAME=hello-java-${CIRCLE_BRANCH}
-            DOCKER_IMAGE=kota661/hello-java-dev:${CIRCLE_SHA1}
+            FULL_NAME=hello-java-${CIRCLE_BRANCH//./-}
+            DOCKER_IMAGE=kota661/hello-java:${CIRCLE_SHA1}
             REPLICAS=1
 
             # ログイン
@@ -157,7 +157,7 @@ jobs:
             sed -i -e "s/{FullName}/${FULL_NAME}/g" deployment-for-ci.yml
             sed -i -e "s/{Version}/${APP_VERSION}/g" deployment-for-ci.yml
             sed -i -e "s/{Replicas}/${REPLICAS}/g" deployment-for-ci.yml
-            sed -i -e "s/{DockerImage}/${DOCKER_IMAGE}/g" deployment-for-ci.yml
+            sed -i -e "s#{DockerImage}#${DOCKER_IMAGE}#g" deployment-for-ci.yml
 
             # namespaceの作成
             kubectl get namespaces hello-java-${APP_ENV} || kubectl create namespace hello-java-${APP_ENV}
@@ -184,8 +184,8 @@ jobs:
             K8S_CLUSTER=mycluster
             APP_ENV=qa
             APP_VERSION=${CIRCLE_BRANCH}
-            FULL_NAME=hello-java-${CIRCLE_BRANCH}
-            DOCKER_IMAGE=kota661/hello-java-dev:${CIRCLE_SHA1}
+            FULL_NAME=hello-java-${CIRCLE_BRANCH//./-}
+            DOCKER_IMAGE=kota661/hello-java:${CIRCLE_SHA1}
             REPLICAS=1
 
             # ログイン
@@ -202,7 +202,7 @@ jobs:
             sed -i -e "s/{FullName}/${FULL_NAME}/g" deployment-for-ci.yml
             sed -i -e "s/{Version}/${APP_VERSION}/g" deployment-for-ci.yml
             sed -i -e "s/{Replicas}/${REPLICAS}/g" deployment-for-ci.yml
-            sed -i -e "s/{DockerImage}/${DOCKER_IMAGE}/g" deployment-for-ci.yml
+            sed -i -e "s#{DockerImage}#${DOCKER_IMAGE}#g" deployment-for-ci.yml
 
             # namespaceの作成
             kubectl get namespaces hello-java-${APP_ENV} || kubectl create namespace hello-java-${APP_ENV}
@@ -268,7 +268,7 @@ jobs:
             sed -i -e "s/{FullName}/${FULL_NAME}/g" deployment-for-ci.yml
             sed -i -e "s/{Version}/${APP_VERSION}/g" deployment-for-ci.yml
             sed -i -e "s/{Replicas}/${REPLICAS}/g" deployment-for-ci.yml
-            sed -i -e "s/{DockerImage}/${DOCKER_IMAGE}/g" deployment-for-ci.yml
+            sed -i -e "s#{DockerImage}#${DOCKER_IMAGE}#g" deployment-for-ci.yml
 
             # namespaceの作成
             kubectl get namespaces hello-java-${APP_ENV} || kubectl create namespace hello-java-${APP_ENV}
