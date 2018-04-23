@@ -303,6 +303,7 @@ workflows:
               only:
                 - master
   release:
+    jobs:
       # release準備（Docker ImageをPush）
       - before-release:
           filters:
