@@ -140,7 +140,7 @@ jobs:
             APP_ENV=dev
             APP_VERSION=${CIRCLE_BRANCH}
             FULL_NAME=hello-java-${CIRCLE_BRANCH//./-}
-            DOCKER_IMAGE=kota661/hello-java:${CIRCLE_SHA1}
+            DOCKER_IMAGE=kota661/hello-java-dev:${CIRCLE_SHA1}
             REPLICAS=1
 
             # ログイン
@@ -185,7 +185,7 @@ jobs:
             APP_ENV=qa
             APP_VERSION=${CIRCLE_BRANCH}
             FULL_NAME=hello-java-${CIRCLE_BRANCH//./-}
-            DOCKER_IMAGE=kota661/hello-java:${CIRCLE_SHA1}
+            DOCKER_IMAGE=kota661/hello-java-dev:${CIRCLE_SHA1}
             REPLICAS=1
 
             # ログイン
