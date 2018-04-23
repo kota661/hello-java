@@ -12,7 +12,7 @@ install:
   - echo "java build"
   - mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
   - echo "docker build"
-  - docker build -t kota661/hello-java:latest .
+  - docker build -t kota661/hello-java:latest -f Dockerfile-for-ci .
 
 script:
   - echo "Build complete!"
