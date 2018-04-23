@@ -8,7 +8,6 @@ spec:
  selector:
    app: java-app
    version: {Version}
-   environment: {Environment}
  # type: LoadBalancer
  type: NodePort
  ports:
@@ -31,20 +30,30 @@ spec:
       labels:
         app: java-app
         version: {Version}
-        environment: {Environment}
     spec:
       containers:
       - name: java-app
-        image: kota661/hello-java:{Version}
-        # Always, Never, default:IfNotPresent
-        imagePullPolicy: {ImagePullPolicy}
+        image: {DockerImage}
+        #@param Always, Never, default:IfNotPresent
+        #imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
         #readinessProbe:
         #  httpGet:
-        #    path: /health
+        #    path: /healthz
         #    port: 8080
-        #  initialDelaySeconds: 20
+        #  initialDelaySeconds: 3
+        #  periodSeconds: 3
+        #  timeoutSeconds: 1
+        #  failureThreshold: 3
+        #livenessProbe:
+        #  httpGet:
+        #    path: /ready
+        #    port: 8080
+        #  initialDelaySeconds: 30
+        #  timeoutSeconds: 1
+        #  periodSeconds: 20
+        #  failureThreshold: 3
         #resources:
         #  requests:
         #    cpu: 100m
