@@ -1,7 +1,7 @@
 FROM maven:3.5-jdk-8 as BUILD
 WORKDIR /usr/src/app
-COPY pom.xml .
-COPY src .
+COPY pom.xml /usr/src/app
+COPY src /usr/src/app/src
 RUN mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 
 FROM websphere-liberty:microProfile
