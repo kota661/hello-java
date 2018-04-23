@@ -250,7 +250,8 @@ jobs:
             K8S_CLUSTER=mycluster
             APP_ENV=prod
             APP_VERSION=${CIRCLE_TAG}
-            FULL_NAME=hello-java-${CIRCLE_TAG//./-}
+            # FULL_NAME=hello-java-${CIRCLE_TAG//./-}
+            FULL_NAME=hello-java
             DOCKER_IMAGE=kota661/hello-java:${CIRCLE_TAG}
             REPLICAS=3
 
@@ -301,6 +302,8 @@ workflows:
             branches:
               only:
                 - master
+  release:
+    jobs:
       # release準備（Docker ImageをPush）
       - before-release:
           filters:
